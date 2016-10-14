@@ -80,13 +80,58 @@
 <br />
 <div class="row">
   <div class="col-xs-6 text-center">
-  <form id="entry" method="POST" action="/_check">
-    <label for="attempt">Word:</label>
-    <input id="attempt" name="attempt" type="text" width="15"
-      autocomplete="off"  autofocus />
-    <input type="submit" name="try" />
-  </form>
-</div></div>
+      <label for="attempt">Word:</label>
+      <input id="attempt" name="attempt" type="text" width="15"
+        autocomplete="off"  autofocus />
+  </div>
+</div>
+
+<p id="completed"> </p>
+
+<script>
+
+// Suppress normal form submission
+$("#entry").submit( function(event) {
+   event.preventDefault();
+  });
+
+// On each keystroke, ask the server whether the current
+// word is long enough.
+//
+// We use 'keyup' because the form value
+// is updated before that event is generated.
+// keypress is triggered before the input field has been
+// updated.  Be aware that we'll see non-character keys like
+// shift and control, so make sure whatever you do with the
+// event does not depend on it being a letter.
+//
+$("#attempt").keyup(function(event) {
+   var txt = $("#attempt").val();  // Current content of the input field
+   var keycode = event.which;      // They key that just went up
+   var letter = String.fromCharCode(keycode);
+
+   // That letter might not be a letter ... it could be the
+   // the backspace key, or even the shift key, because 'keyup'
+   // catches all kinds of keys.  (Also, the difference between
+   // upper and lower case comes from state of shift key + key code,
+   // so ignoring the shift key we get only the upper case letters.
+
+   if (! "ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(letter)) { return }
+
+   $.getJSON( "/_check", { text: txt },
+              function(data) {
+                word = data.result.key;
+                if (word == "TARGET_MET") {
+                   window.location.replace("/success");
+                } else if (word != "incomplete" ){
+                   $("#completed").append(word+"<br />");
+                   $("#attempt").val("");
+                }
+               }
+           );
+   });
+
+   </script>
 
 <br />
 
@@ -94,7 +139,7 @@
 <h2>You found </h2>
 <p id="results">
   {% for match in session.matches %}
-  {{ match }} 
+  {{ match }}
   {% endfor %}
 </p>
 {% endif %}
